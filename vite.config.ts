@@ -15,8 +15,8 @@ import { loadEnv } from "vite";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
-  const productionDatabaseId = env.CLOUDFLARE_D1_DATABASE_ID?.trim();
-  const productionDatabaseName = env.CLOUDFLARE_D1_DATABASE_NAME?.trim();
+  const productionDatabaseId = "1b528909-5c43-4821-b10e-0d1893b83427";
+  const productionDatabaseName = "k-tv-portfolio-db";
 
   // ...
 });
