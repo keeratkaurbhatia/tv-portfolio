@@ -5,6 +5,11 @@ import { sites } from "./build/sites-vite-plugin";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
+console.log({
+  DB_ID: process.env.CLOUDFLARE_D1_DATABASE_ID,
+  DB_NAME: process.env.CLOUDFLARE_D1_DATABASE_NAME,
+});
+
 const productionDatabaseId = process.env.CLOUDFLARE_D1_DATABASE_ID?.trim();
 const productionDatabaseName = process.env.CLOUDFLARE_D1_DATABASE_NAME?.trim();
 
