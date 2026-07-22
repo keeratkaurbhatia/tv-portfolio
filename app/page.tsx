@@ -185,6 +185,7 @@ export default function Home() {
   const [stationAuth, setStationAuth] = useState<StationAuthStatus>({ loading: true, configured: false, authenticated: false, canInitialize: false });
   const [controlPhrase, setControlPhrase] = useState("");
   const [confirmPhrase, setConfirmPhrase] = useState("");
+  const [setupCode, setSetupCode] = useState("");
   const [controlBusy, setControlBusy] = useState(false);
   const [controlError, setControlError] = useState("");
   const [atmosphereOn, setAtmosphereOn] = useState(false);
@@ -565,13 +566,14 @@ export default function Home() {
       const response = await fetch("/api/station-auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: stationAuth.configured ? "login" : "initialize", password: controlPhrase }),
+        body: JSON.stringify({ action: stationAuth.configured ? "login" : "initialize", password: controlPhrase, setupCode: stationAuth.configured ? undefined : setupCode }),
       });
       const result = await response.json() as { error?: string };
       if (!response.ok) throw new Error(result.error || "Master Control rejected the transmission.");
       await Promise.all([refreshStationAuth(), refreshOwnerSession()]);
       setControlPhrase("");
       setConfirmPhrase("");
+      setSetupCode("");
       window.history.replaceState({ ktv: "channel", channel } satisfies KtvHistoryState, "", channelAddress(channel));
       setEntryVisible(false);
       setEntryMode("choice");
@@ -809,10 +811,12 @@ export default function Home() {
         stationAuth={stationAuth}
         password={controlPhrase}
         confirmation={confirmPhrase}
+        setupCode={setupCode}
         busy={controlBusy}
         error={controlError}
         onPassword={setControlPhrase}
         onConfirmation={setConfirmPhrase}
+        onSetupCode={setSetupCode}
         onViewer={() => enterPortfolio(0)}
         onControl={() => {
           if (stationAuth.authenticated) {
@@ -876,15 +880,17 @@ export default function Home() {
   );
 }
 
-function SignalThreshold({ mode, stationAuth, password, confirmation, busy, error, onPassword, onConfirmation, onViewer, onControl, onBack, onSubmit }: {
+function SignalThreshold({ mode, stationAuth, password, confirmation, setupCode, busy, error, onPassword, onConfirmation, onSetupCode, onViewer, onControl, onBack, onSubmit }: {
   mode: "choice" | "control";
   stationAuth: StationAuthStatus;
   password: string;
   confirmation: string;
+  setupCode: string;
   busy: boolean;
   error: string;
   onPassword: (value: string) => void;
   onConfirmation: (value: string) => void;
+  onSetupCode: (value: string) => void;
   onViewer: () => void;
   onControl: () => void;
   onBack: () => void;
@@ -919,12 +925,14 @@ function SignalThreshold({ mode, stationAuth, password, confirmation, busy, erro
         <p>{initializing ? "Choose the phrase that will unlock portfolio editing. It cannot be recovered from the broadcast." : "The public signal is receive-only. Master Control permits the portfolio to be rewritten."}</p>
       </div>
       {stationAuth.loading ? <div className="vault-wait"><i />CONTACTING STATION VAULT</div> : initializing && !stationAuth.canInitialize ? <div className="identity-lock">
-        <b>OWNER IDENTITY REQUIRED</b>
-        <p>The first control phrase can only be set after the station recognizes its owner.</p>
-        <a href="/signin-with-chatgpt?return_to=%2F">VERIFY STATION IDENTITY ↗</a>
+        <b>SETUP CODE NOT CONFIGURED</b>
+        <p>Master Control is waiting for its one-time setup code to be added to the host.</p>
       </div> : <form className="vault-form" onSubmit={onSubmit}>
+        {initializing && <label>ONE-TIME SETUP CODE
+          <input type="password" name="ktv-setup-code" autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-bwignore="true" spellCheck={false} required value={setupCode} onChange={event => onSetupCode(event.target.value)} autoFocus />
+        </label>}
         <label>{initializing ? "CREATE CONTROL PHRASE" : "CONTROL PHRASE"}
-          <input type="password" name="ktv-control-signal" autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-bwignore="true" spellCheck={false} minLength={10} maxLength={128} required value={password} onChange={event => onPassword(event.target.value)} autoFocus />
+          <input type="password" name="ktv-control-signal" autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-bwignore="true" spellCheck={false} minLength={10} maxLength={128} required value={password} onChange={event => onPassword(event.target.value)} autoFocus={!initializing} />
         </label>
         {initializing && <label>REPEAT CONTROL PHRASE
           <input type="password" name="ktv-control-signal-confirmation" autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-bwignore="true" spellCheck={false} minLength={10} maxLength={128} required value={confirmation} onChange={event => onConfirmation(event.target.value)} />

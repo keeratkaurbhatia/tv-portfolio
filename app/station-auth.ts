@@ -1,5 +1,4 @@
 import { env } from "cloudflare:workers";
-import { getChatGPTUser } from "@/app/chatgpt-auth";
 
 type RuntimeEnv = { DB?: D1Database };
 
@@ -42,12 +41,16 @@ export function isLocalRequest(request: Request) {
   return process.env.NODE_ENV !== "production" && (hostname === "localhost" || hostname === "127.0.0.1");
 }
 
-export async function isConfiguredOwnerIdentity(request: Request) {
+export function hasConfiguredSetupCode() {
+  return Boolean(process.env.PORTFOLIO_SETUP_CODE?.trim());
+}
+
+export async function canInitializeStation(request: Request, suppliedCode: string) {
   if (isLocalRequest(request)) return true;
-  const user = await getChatGPTUser();
-  if (!user) return false;
-  const ownerEmail = process.env.PORTFOLIO_OWNER_EMAIL?.trim().toLowerCase();
-  return Boolean(ownerEmail && user.email.toLowerCase() === ownerEmail);
+  const expectedCode = process.env.PORTFOLIO_SETUP_CODE?.trim();
+  if (!expectedCode || !suppliedCode) return false;
+  const [suppliedHash, expectedHash] = await Promise.all([sha256(suppliedCode), sha256(expectedCode)]);
+  return safeEqual(suppliedHash, expectedHash);
 }
 
 function cookieValue(request: Request, name: string) {

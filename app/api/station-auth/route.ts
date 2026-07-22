@@ -2,11 +2,12 @@ import {
   PASSWORD_ITERATIONS,
   SESSION_SECONDS,
   clearSessionCookie,
+  canInitializeStation,
   currentSessionHash,
   derivePassword,
   ensureStationAuthSchema,
   hasMasterControlSession,
-  isConfiguredOwnerIdentity,
+  hasConfiguredSetupCode,
   randomHex,
   safeEqual,
   sessionCookie,
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
     await ensureStationAuthSchema(db);
     const configured = Boolean(await credentials(db));
     const authenticated = configured && await hasMasterControlSession(request, db);
-    const canInitialize = !configured && await isConfiguredOwnerIdentity(request);
+    const canInitialize = !configured && (isLocalRequest(request) || hasConfiguredSetupCode());
     return Response.json({ configured, authenticated, canInitialize }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Master control status failed", error);
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  let body: { action?: string; password?: string };
+  let body: { action?: string; password?: string; setupCode?: string };
   try {
     body = await request.json();
   } catch {
@@ -75,8 +76,8 @@ export async function POST(request: Request) {
 
   if (body.action === "initialize") {
     if (existing) return Response.json({ error: "Master Control has already been sealed." }, { status: 409 });
-    if (!await isConfiguredOwnerIdentity(request)) {
-      return Response.json({ error: "The verified station owner must seal Master Control for the first time." }, { status: 403 });
+    if (!await canInitializeStation(request, body.setupCode || "")) {
+      return Response.json({ error: "The station rejected the one-time setup code." }, { status: 403 });
     }
     const salt = randomHex(24);
     const passwordHash = await derivePassword(password, salt, PASSWORD_ITERATIONS);

@@ -39,12 +39,23 @@ Master Control, saved portfolio content, authentication, and D1 persistence
 require a Cloudflare Workers-compatible deployment. GitHub Pages alone cannot
 run those server features.
 
-Deployment metadata lives in `.openai/hosting.json`, and database migrations
-live in `drizzle/`.
+For Cloudflare Workers Builds, connect the GitHub repository and use:
+
+- Build command: `npm run build`
+- Deploy command: `npm run deploy`
+- Production branch: `main`
+
+Create a D1 database, expose its ID to the build as
+`CLOUDFLARE_D1_DATABASE_ID`, and bind it to the Worker as `DB`. The optional
+`CLOUDFLARE_D1_DATABASE_NAME` build variable defaults to the local preview
+database name; set it to the real D1 database name in production. Database
+migrations live in `drizzle/`.
 
 ## Environment variables
 
 - `GEMINI_API_KEY` — generates and caches project bulletin narration
-- `PORTFOLIO_OWNER_EMAIL` — identifies who may initialize Master Control in production
+- `PORTFOLIO_SETUP_CODE` — a private, one-time code used only to establish the first Master Control password
+- `CLOUDFLARE_D1_DATABASE_ID` — the production D1 database ID used during the cloud build
+- `CLOUDFLARE_D1_DATABASE_NAME` — the production D1 database name used during the cloud build
 
 Never commit `.env.local`; environment files are ignored by Git.
