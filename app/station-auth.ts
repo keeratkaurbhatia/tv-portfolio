@@ -4,7 +4,7 @@ type RuntimeEnv = { DB?: D1Database };
 
 export const STATION_COOKIE = "ktv_master_control";
 export const SESSION_SECONDS = 60 * 60 * 12;
-export const PASSWORD_ITERATIONS = 210_000;
+export const PASSWORD_ITERATIONS = 25_000;
 
 export function stationDatabase() {
   const db = (env as RuntimeEnv).DB;
