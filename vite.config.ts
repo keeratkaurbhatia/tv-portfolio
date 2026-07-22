@@ -10,8 +10,16 @@ console.log({
   DB_NAME: process.env.CLOUDFLARE_D1_DATABASE_NAME,
 });
 
-const productionDatabaseId = process.env.CLOUDFLARE_D1_DATABASE_ID?.trim();
-const productionDatabaseName = process.env.CLOUDFLARE_D1_DATABASE_NAME?.trim();
+import { loadEnv } from "vite";
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+
+  const productionDatabaseId = env.CLOUDFLARE_D1_DATABASE_ID?.trim();
+  const productionDatabaseName = env.CLOUDFLARE_D1_DATABASE_NAME?.trim();
+
+  // ...
+});
 
 const { d1, r2 } = hostingConfig;
 
