@@ -8,6 +8,7 @@ import {
   ensureStationAuthSchema,
   hasMasterControlSession,
   hasConfiguredSetupCode,
+  isLocalRequest,
   randomHex,
   safeEqual,
   sessionCookie,
